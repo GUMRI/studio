@@ -1,0 +1,54 @@
+// Styling for TabsPageComponent
+
+ion-header {
+  ion-toolbar {
+    // Ensure title is prominent and buttons are well-aligned.
+    // Ionic's default primary color should handle contrast well.
+    ion-title {
+      font-weight: bold; // Example: make title bolder
+    }
+
+    ion-button {
+      // Ensure buttons in the toolbar are clear.
+      // Example: add specific styling if needed, though Ionic defaults are usually good.
+      // --color: var(--ion-color-primary-contrast); // If using a colored toolbar
+    }
+  }
+}
+
+ion-tab-bar {
+  // Ensure the tab bar has a clean look in light mode.
+  // Ionic defaults are typically good, but overrides can be placed here.
+  // Example: Add a subtle top border
+  // border-top: 1px solid var(--ion-color-medium-tint);
+
+  ion-tab-button {
+    // Style for inactive tabs
+    --color: var(--ion-color-medium-shade);
+    --color-selected: var(--ion-color-primary); // Color for active tab icon and label
+
+    // ion-label {
+    //   font-size: 0.9em; // Adjust label size if needed
+    // }
+
+    // To ensure icons and labels are visible and contrast well
+    ion-icon {
+      // --color-selected: var(--ion-color-primary); // Handled by --color-selected on tab-button
+    }
+
+    &.tab-selected {
+      // Specific styles for the selected tab button if needed beyond --color-selected
+      // ion-label {
+      //  font-weight: bold;
+      // }
+    }
+  }
+}
+
+// Ensure content padding is consistent if not using [fullscreen]="true" on ion-content
+// ion-content {
+//   --padding-top: 8px;
+//   --padding-bottom: 8px;
+//   --padding-start: 8px;
+//   --padding-end: 8px;
+// }

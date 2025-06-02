@@ -1,0 +1,117 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>{{ currentSchema?.displayName || collectionName || 'Collection' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="addNewRow()" [disabled]="!currentSchema">
+        <ion-icon slot="icon-only" name="add-circle-outline"></ion-icon>
+      </ion-button>
+      <ion-button (click)="deleteSelectedRows()" [disabled]="selectedRows.size === 0" color="danger">
+        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">{{ currentSchema?.displayName || collectionName || 'Collection' }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-toolbar>
+    <ion-searchbar
+      class="custom-searchbar"
+      [value]="searchTerm"
+      (ionInput)="onSearchChange($event)"
+      placeholder="Search..."
+      showClearButton="always"
+      debounce="300">
+    </ion-searchbar>
+    <ion-buttons slot="end">
+      <ion-button (click)="openAdvancedFilterModal()" [color]="advancedFilters.length > 0 ? 'warning' : 'medium'">
+        <ion-icon name="filter-outline"></ion-icon>
+        <ion-badge *ngIf="advancedFilters.length > 0" color="warning">{{ advancedFilters.length }}</ion-badge>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <div *ngIf="!currentSchema" class="ion-padding">
+    <ion-text color="danger">
+      <p>Schema '{{ collectionName }}' not found. Cannot display data.</p>
+    </ion-text>
+  </div>
+
+  <div *ngIf="currentSchema && columnDefinitions.length > 0" class="table-container ion-padding">
+    <div class="action-bar ion-margin-bottom" *ngIf="filteredCollectionData.length > 0 || collectionData.length > 0">
+       <!-- This area is for buttons that act on selected items from filteredCollectionData -->
+       <!-- Or general collection actions. For now, it is mostly empty or controlled by header buttons. -->
+    </div>
+
+    <p *ngIf="filteredCollectionData.length === 0 && searchTerm" class="ion-text-center">
+      No items match your search for "{{ searchTerm }}".
+    </p>
+    <p *ngIf="filteredCollectionData.length === 0 && !searchTerm && collectionData.length > 0" class="ion-text-center">
+      All items filtered out. <!-- Placeholder for when advanced filters are added -->
+    </p>
+    <p *ngIf="collectionData.length === 0 && currentSchema" class="ion-text-center">
+      No data available for this collection.
+      <ion-button fill="clear" (click)="addNewRow()">Add the first row?</ion-button>
+    </p>
+
+    <div *ngIf="filteredCollectionData.length > 0" class="responsive-table">
+      <table>
+        <thead>
+          <tr>
+            <th>
+              <ion-checkbox [checked]="areAllRowsSelected"
+                            (ionChange)="toggleSelectAll()"
+                            [disabled]="filteredCollectionData.length === 0"></ion-checkbox>
+            </th>
+            <th *ngFor="let col of columnDefinitions">{{ col.label }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredCollectionData; let i = index" [class.selected-row]="isRowSelected(item)">
+            <td>
+              <ion-checkbox [checked]="isRowSelected(item)"
+                            (ionChange)="toggleRowSelection(item)"></ion-checkbox>
+            </td>
+            <td *ngFor="let col of columnDefinitions"
+                [class.empty-cell]="item[col.key] === null || item[col.key] === undefined || item[col.key] === ''"
+                (click)="!col.isId ? toggleRowSelection(item) : null">
+              <ng-container [ngSwitch]="col.type">
+                <span *ngSwitchCase="'boolean'">
+                  {{ item[col.key] ? 'True' : 'False' }}
+                </span>
+                <span *ngSwitchCase="'date'">
+                  {{ getDisplayValue(item, col) | date:'short' }}
+                </span>
+                <span *ngSwitchCase="'number'">
+                  {{ getDisplayValue(item, col) }}
+                </span>
+                <span *ngSwitchCase="'object'">
+                  <pre>{{ getDisplayValue(item, col) | json }}</pre>
+                </span>
+                <span *ngSwitchCase="'array'">
+                  <ng-container *ngIf="col.arrayType === 'string' || col.arrayType === 'number'">
+                    {{ (getDisplayValue(item, col) || []).join(', ') }}
+                  </ng-container>
+                  <ng-container *ngIf="col.arrayType === 'object'">
+                    <pre>{{ getDisplayValue(item, col) | json }}</pre>
+                  </ng-container>
+                </span>
+                <span *ngSwitchDefault>
+                  {{ getDisplayValue(item, col) }}
+                </span>
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ion-content>

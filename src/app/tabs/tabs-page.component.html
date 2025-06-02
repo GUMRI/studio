@@ -1,0 +1,29 @@
+<!-- This component's template might be part of a larger App Shell if the save button needs to be truly global,
+     or if TabsPage itself is the root page with a header. Assuming TabsPage has its own header area
+     or is the place for such a global button for now. -->
+
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Data Studio</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveAllChanges()">
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        Save All
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-tabs>
+  <ion-tab-bar slot="bottom">
+    <ion-tab-button *ngFor="let schema of availableSchemas" [tab]="schema.collectionName" [routerLink]="['/tabs', schema.collectionName]">
+      <ion-label>{{ schema.displayName || schema.collectionName }}</ion-label>
+      <!-- <ion-icon name="list-outline"></ion-icon> -->
+    </ion-tab-button>
+  </ion-tab-bar>
+
+  <ion-router-outlet></ion-router-outlet>
+</ion-tabs>

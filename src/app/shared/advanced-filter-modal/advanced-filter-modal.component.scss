@@ -1,0 +1,93 @@
+// Styles for AdvancedFilterModalComponent
+
+// Moved from inline HTML styles:
+.filter-row {
+  ion-grid {
+    width: 100%;
+  }
+  ion-col {
+    padding-left: 4px;
+    padding-right: 4px;
+    display: flex; // Helps with vertical alignment of items in the column
+    align-items: center; // Vertically align items in the column
+  }
+  // Ensure selects and inputs take full width of their columns
+  ion-select, ion-input, ion-datetime-button {
+    width: 100%;
+    max-width: 100%;
+  }
+  // Specific alignment for the remove button column
+  ion-col.ion-text-end {
+    justify-content: flex-end; // Align button to the end
+  }
+}
+
+.between-inputs {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  ion-input {
+    flex: 1; // Allow inputs to share space
+  }
+  ion-text {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+// Additional refinements:
+ion-header ion-toolbar {
+  // Standard Ionic primary color for modal headers often looks good.
+  // Alternatively, use --ion-background-color for default page color.
+  // --background: var(--ion-color-primary);
+  // --color: var(--ion-color-primary-contrast);
+}
+
+ion-content {
+  // General padding is already applied via class="ion-padding" in HTML.
+  // Add specific padding if needed.
+}
+
+ion-list {
+  background: transparent; // Ensure list background doesn't clash
+}
+
+.filter-row {
+  border: 1px solid var(--ion-color-medium-tint, #e0e0e0);
+  border-radius: 8px;
+  padding: 8px 0; // Add some padding, but ion-item will handle internal padding
+  margin-bottom: 12px !important; // Ensure ion-margin-bottom is applied as expected
+
+  ion-item {
+    --padding-start: 8px; // Adjust internal padding of items if needed
+    --inner-padding-end: 8px;
+    --border-color: transparent; // Remove default item border if row has border
+    --background: transparent; // Ensure item background is transparent
+  }
+}
+
+ion-footer ion-toolbar {
+  // Add a subtle top border to the footer toolbar for separation
+  border-top: 1px solid var(--ion-color-medium-tint, #e0e0e0);
+  padding-top: 4px; // Ensure buttons aren't too close to the border
+  padding-bottom: 4px;
+}
+
+// Style for the "Add Filter Condition" button
+ion-content > ion-button[expand="block"] {
+  margin-top: 16px; // Space above the add filter button
+}
+
+// Message for "No fields available"
+div > ion-text[color="medium"] p {
+  text-align: center;
+  font-size: 1em;
+  padding: 20px;
+}
+
+// Ensure datetime modal appears correctly if used
+ion-modal {
+  ion-datetime {
+    // Customizations for datetime if needed
+  }
+}

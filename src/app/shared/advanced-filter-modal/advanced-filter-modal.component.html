@@ -1,0 +1,107 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Advanced Filters</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismissModal(false)">Close</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div *ngIf="fields.length === 0">
+    <ion-text color="medium"><p>No fields available for filtering.</p></ion-text>
+  </div>
+
+  <ion-list *ngIf="fields.length > 0">
+    <div *ngFor="let filter of currentFilters; let i = index; trackBy: trackByFilterId" class="filter-row ion-margin-bottom">
+      <ion-item lines="full">
+        <ion-grid>
+          <ion-row class="ion-align-items-center">
+            <ion-col size="12" size-sm="3">
+              <ion-select
+                [value]="filter.field"
+                (ionChange)="onFieldChange(filter, $event.detail.value)"
+                placeholder="Select Field"
+                interface="popover">
+                <ion-select-option *ngFor="let field of fields" [value]="field.name">
+                  {{ field.label || field.name }}
+                </ion-select-option>
+              </ion-select>
+            </ion-col>
+
+            <ion-col size="12" size-sm="3">
+              <ion-select
+                [value]="filter.operator"
+                (ionChange)="filter.operator = $event.detail.value; filter.value = undefined; filter.value2 = undefined"
+                placeholder="Operator"
+                interface="popover">
+                <ion-select-option *ngFor="let op of getOperatorsForFilterCondition(filter)" [value]="op">
+                  {{ op }}
+                </ion-select-option>
+              </ion-select>
+            </ion-col>
+
+            <ion-col size="12" size-sm="5" *ngIf="!isOperatorUnary(filter.operator)">
+              <ion-input
+                *ngIf="isOperatorBinary(filter.operator) || (isOperatorTernary(filter.operator) && filter.fieldType !== 'date')"
+                [type]="filter.fieldType === 'number' ? 'number' : (filter.fieldType === 'date' ? 'date' : 'text')"
+                [(ngModel)]="filter.value"
+                placeholder="Value"
+                [debounce]="300">
+              </ion-input>
+
+              <ion-datetime-button datetime="datetime-{{filter.id}}" *ngIf="isOperatorBinary(filter.operator) && filter.fieldType === 'date'"></ion-datetime-button>
+              <ion-modal [keepContentsMounted]="true" *ngIf="isOperatorBinary(filter.operator) && filter.fieldType === 'date'">
+                <ion-datetime
+                  id="datetime-{{filter.id}}"
+                  [(ngModel)]="filter.value"
+                  presentation="date"
+                  showDefaultButtons="true"
+                  (ionChange)="filter.value = $event.detail.value">
+                </ion-datetime>
+              </ion-modal>
+
+              <div *ngIf="isOperatorTernary(filter.operator)" class="between-inputs">
+                <ion-input
+                  [type]="filter.fieldType === 'number' ? 'number' : 'text'"
+                  [(ngModel)]="filter.value"
+                  placeholder="From"
+                  [debounce]="300">
+                </ion-input>
+                <ion-text class="ion-padding-horizontal">-</ion-text>
+                <ion-input
+                  [type]="filter.fieldType === 'number' ? 'number' : 'text'"
+                  [(ngModel)]="filter.value2"
+                  placeholder="To"
+                  [debounce]="300">
+                </ion-input>
+                 <!-- Date 'between' would need two ion-datetime, simplified for now -->
+              </div>
+            </ion-col>
+            <ion-col size="12" size-sm="1" class="ion-text-end">
+              <ion-button (click)="removeFilter(i)" fill="clear" color="danger" [disabled]="currentFilters.length <= 1 && i === 0">
+                <ion-icon name="remove-circle-outline" slot="icon-only"></ion-icon>
+              </ion-button>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-item>
+    </div>
+  </ion-list>
+
+  <ion-button expand="block" (click)="addFilter()" [disabled]="fields.length === 0">
+    <ion-icon name="add-outline" slot="start"></ion-icon>
+    Add Filter Condition
+  </ion-button>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="dismissModal(false)" color="medium">Cancel</ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismissModal(true)" color="primary" [disabled]="currentFilters.length === 0 && fields.length > 0">Apply Filters</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>
