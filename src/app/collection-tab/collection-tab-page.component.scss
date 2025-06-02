@@ -40,7 +40,7 @@
       margin-right: 0; // Remove fixed margin, rely on cell padding
       vertical-align: middle; // Align checkbox nicely if text is single line
     }
-
+    
     // Specific styling for the first column (checkbox column)
     th:first-child, td:first-child {
       width: 50px; // Fixed width for checkbox column
@@ -76,7 +76,7 @@ pre {
   td {
     background-color: var(--ion-color-primary-tint, #e4efff); // Current selection color is good
     // Optionally, add a border or other indicators
-    // border-left: 3px solid var(--ion-color-primary);
+    // border-left: 3px solid var(--ion-color-primary); 
   }
 }
 
@@ -86,7 +86,7 @@ ion-toolbar {
     padding-top: 4px;
     padding-bottom: 4px;
     --background: var(--ion-color-light-contrast); // Or transparent
-
+    
     ion-searchbar {
       // The class "custom-searchbar" was added in HTML, can use that too
       // --background: var(--ion-color-light, #f4f5f8); // Searchbar background

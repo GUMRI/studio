@@ -1,0 +1,56 @@
+<div class="smart-table-container" *ngIf="displayColumns.length > 0; else noSchemaOrColumns">
+  <table>
+    <thead>
+      <tr>
+        <th>
+          <ion-checkbox
+            [checked]="areAllDisplayedRowsSelected"
+            (ionChange)="toggleSelectAllDisplayed()"
+            [disabled]="data.length === 0"
+            title="Select/Deselect All Visible Rows">
+          </ion-checkbox>
+        </th>
+        <th *ngFor="let col of displayColumns" 
+            [class.required-column]="col.isRequired"
+            title="{{ col.label }}{{ col.isRequired ? ' (Required)' : '' }}">
+          {{ col.label }}
+          <span *ngIf="col.isRequired" class="required-indicator">*</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of data; let i = index" [class.selected]="isRowSelected(item)">
+        <td>
+          <ion-checkbox
+            [checked]="isRowSelected(item)"
+            (ionChange)="toggleRowSelection(item)">
+          </ion-checkbox>
+        </td>
+        <td *ngFor="let col of displayColumns" 
+            [attr.title]="getDisplayValue(item, col)"
+            [class.encrypted-cell]="col.isEncrypted"
+            [class.placeholder-cell]="col.type === 'object' || col.type === 'array'"
+            (click)="toggleRowSelection(item)"> <!-- Allow clicking cell to toggle selection -->
+          <span [ngSwitch]="col.type">
+            <span *ngSwitchCase="'boolean'">
+              <ion-icon [name]="item[col.path] ? 'checkmark-circle-outline' : 'ellipse-outline'"
+                        [color]="item[col.path] ? 'success' : 'medium'"
+                        class="boolean-icon"></ion-icon>
+            </span>
+            <span *ngSwitchDefault>{{ getDisplayValue(item, col) }}</span>
+          </span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div *ngIf="data.length === 0" class="empty-data-message">
+    <p>No data available for this view.</p>
+  </div>
+</div>
+
+<ng-template #noSchemaOrColumns>
+  <div class="no-schema-message ion-padding">
+    <p *ngIf="!schema && !collectionName">No schema or collection name provided to SmartTable.</p>
+    <p *ngIf="(schema || collectionName) && displayColumns.length === 0">Schema loaded, but no displayable columns found or generated.</p>
+  </div>
+</ng-template>

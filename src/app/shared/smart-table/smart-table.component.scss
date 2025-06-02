@@ -1,0 +1,118 @@
+// Styles for SmartTableComponent
+
+.smart-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--ion-border-color, #d7d8da); // Use standard Ionic border color
+  border-radius: 8px;
+  background-color: var(--ion-background-color, #ffffff);
+  margin-bottom: 16px; // Space below the table
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+
+  th,
+  td {
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--ion-border-color, #d7d8da);
+
+    &:not(:first-child) { // Applies to all but the first column (checkbox column)
+      border-left: 1px solid var(--ion-color-step-150, #efefef); // Softer vertical lines
+    }
+  }
+
+  // Header styling
+  th {
+    font-weight: 600;
+    color: var(--ion-text-color-step-800, #3a3a3a); // Slightly darker text for headers
+    background-color: var(--ion-color-step-50, #f7f7f7); // Very light background for headers
+    white-space: nowrap;
+
+    .required-indicator {
+      color: var(--ion-color-danger-shade, #cf3c4f); // Darker red for better contrast
+      margin-left: 3px;
+      font-weight: bold;
+      display: inline-block; // Ensure it doesn't affect line height too much
+    }
+  }
+
+  // Checkbox column styling (first th and td)
+  th:first-child,
+  td:first-child {
+    width: 50px; // Keep fixed width
+    text-align: center;
+    padding-left: 10px; // Adjust padding for checkbox alignment
+    padding-right: 10px;
+    border-left: none !important; // No left border for the very first cell
+  }
+  td:first-child ion-checkbox { // Ensure checkbox is centered
+      margin: auto; // This might need display:flex on td if not working
+  }
+
+
+  // Data cell styling
+  td {
+    color: var(--ion-text-color-step-600, #595959);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px; // Increased max-width slightly
+
+    &.placeholder-cell,
+    &.encrypted-cell {
+      font-style: italic;
+      color: var(--ion-color-step-400, #999999); // Lighter for placeholders
+    }
+
+    span[ngSwitch="'boolean'"] .boolean-icon {
+      font-size: 1.3em; // Slightly larger icons
+      vertical-align: middle; // Better alignment with text if any
+    }
+  }
+
+  // Selected row styling
+  tbody tr.selected {
+    td {
+      background-color: var(--ion-color-primary-tint, #e4efff);
+      color: var(--ion-color-primary-shade); // Darker text on selection for better contrast
+    }
+    // Ensure checkbox in selected row is also styled if needed
+    // td:first-child ion-checkbox { ... }
+  }
+  
+  tbody tr:last-child td {
+    border-bottom: none; // Remove bottom border from last row for cleaner look inside container
+  }
+}
+
+// Hover effect for rows (optional, but good for desktop)
+tbody tr:not(.selected):hover {
+  td {
+    background-color: var(--ion-color-step-50, #f7f7f7); // Subtle hover
+  }
+}
+
+
+.empty-data-message,
+.no-schema-message {
+  padding: 24px;
+  text-align: center;
+  color: var(--ion-color-step-500, #7b7b7b);
+  p {
+    margin: 0;
+    font-size: 1.05em;
+  }
+}
+
+// For horizontal scroll visual cue (optional, might require JS or be complex with pure CSS)
+// .smart-table-container.is-scrolling-x {
+//   box-shadow: inset -10px 0 8px -8px rgba(0,0,0,0.1); // Right shadow
+// }
+// .smart-table-container.is-scrolling-x-far-end {
+//   box-shadow: inset 10px 0 8px -8px rgba(0,0,0,0.1); // Left shadow
+// }

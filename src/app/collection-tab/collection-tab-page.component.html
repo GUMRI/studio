@@ -58,7 +58,7 @@
       All items filtered out. <!-- Placeholder for when advanced filters are added -->
     </p>
     <p *ngIf="collectionData.length === 0 && currentSchema" class="ion-text-center">
-      No data available for this collection.
+      No data available for this collection. 
       <ion-button fill="clear" (click)="addNewRow()">Add the first row?</ion-button>
     </p>
 
@@ -67,7 +67,7 @@
         <thead>
           <tr>
             <th>
-              <ion-checkbox [checked]="areAllRowsSelected"
+              <ion-checkbox [checked]="areAllRowsSelected" 
                             (ionChange)="toggleSelectAll()"
                             [disabled]="filteredCollectionData.length === 0"></ion-checkbox>
             </th>
@@ -80,7 +80,7 @@
               <ion-checkbox [checked]="isRowSelected(item)"
                             (ionChange)="toggleRowSelection(item)"></ion-checkbox>
             </td>
-            <td *ngFor="let col of columnDefinitions"
+            <td *ngFor="let col of columnDefinitions" 
                 [class.empty-cell]="item[col.key] === null || item[col.key] === undefined || item[col.key] === ''"
                 (click)="!col.isId ? toggleRowSelection(item) : null">
               <ng-container [ngSwitch]="col.type">

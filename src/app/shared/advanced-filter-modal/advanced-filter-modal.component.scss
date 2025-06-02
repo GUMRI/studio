@@ -1,24 +1,90 @@
 // Styles for AdvancedFilterModalComponent
 
-// Moved from inline HTML styles:
 .filter-row {
+  border: 1px solid var(--ion-border-color, #d7d8da);
+  border-radius: 6px; // Slightly less pronounced radius
+  margin-bottom: 16px !important; 
+  background-color: var(--ion-color-step-50, #f7f7f7); // Give rows a very light background
+
+  ion-item.filter-item-container {
+    --padding-start: 0; // Remove item padding, grid will handle it
+    --inner-padding-end: 0;
+    --border-color: transparent;
+    --background: transparent;
+  }
+
   ion-grid {
     width: 100%;
+    padding: 8px 4px; // Padding inside the grid for all columns
   }
+
   ion-col {
-    padding-left: 4px;
-    padding-right: 4px;
-    display: flex; // Helps with vertical alignment of items in the column
-    align-items: center; // Vertically align items in the column
-  }
-  // Ensure selects and inputs take full width of their columns
-  ion-select, ion-input, ion-datetime-button {
-    width: 100%;
-    max-width: 100%;
-  }
-  // Specific alignment for the remove button column
-  ion-col.ion-text-end {
-    justify-content: flex-end; // Align button to the end
+    padding: 6px 8px; // Padding for each column cell
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; // Align items to the start for stacked layout
+
+    ion-label[position="stacked"] {
+      font-size: 0.75em; // Smaller label for stacked
+      color: var(--ion-color-step-600, #666666);
+      margin-bottom: 3px;
+      font-weight: 500;
+      // text-transform: uppercase; // Optional: uppercase labels
+      // letter-spacing: 0.3px;
+    }
+
+    // General styling for form controls in the modal
+    ion-select, ion-input, ion-datetime-button {
+      width: 100%;
+      max-width: 100%;
+      --padding-start: 10px; 
+      --padding-end: 10px;
+      border: 1px solid var(--ion-border-color, #d7d8da);
+      border-radius: 4px;
+      background-color: var(--ion-background-color, #ffffff); // White background for inputs
+      min-height: 40px; // Ensure consistent height
+      font-size: 0.95em;
+    }
+    
+    ion-select {
+      // Ensure select text is visible
+      &::part(text) {
+        color: var(--ion-text-color, #000000);
+      }
+      &::part(placeholder) {
+        color: var(--ion-color-step-400, #999999);
+      }
+    }
+    
+    ion-input { // Ensure input text is visible
+        color: var(--ion-text-color, #000000);
+    }
+
+
+    &.remove-button-col {
+      justify-content: center; // Center button vertically relative to other inputs
+      align-items: center; // Center button horizontally
+      // If labels are stacked, the button might appear too low.
+      // Add padding-top or adjust justify-content if needed.
+      // For example, if other rows have stacked labels pushing content down:
+      padding-top: 20px; // Approximate alignment with inputs that have stacked labels
+      
+      ion-button {
+          --padding-start: 6px; // Smaller padding for icon-only button
+          --padding-end: 6px;
+      }
+    }
+    
+    &.unary-placeholder { // Column for unary operators (no value input)
+        min-height: calc(40px + 1.em); // Match height of input with stacked label approx.
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ion-color-step-300, #b3b3b3);
+        font-style: italic;
+        font-size: 0.85em;
+        // Content can be added via ::before if needed, e.g. "No value needed"
+    }
   }
 }
 
@@ -26,68 +92,57 @@
   display: flex;
   align-items: center;
   width: 100%;
-  ion-input {
+  gap: 8px;
+
+  ion-input, ion-datetime-button {
     flex: 1; // Allow inputs to share space
+    min-width: 0; // Important for flex items to shrink properly
   }
-  ion-text {
-    padding-left: 8px;
-    padding-right: 8px;
+  ion-text { // For the dash between inputs
+    flex-shrink: 0; // Prevent dash from shrinking
   }
 }
 
-// Additional refinements:
-ion-header ion-toolbar {
-  // Standard Ionic primary color for modal headers often looks good.
-  // Alternatively, use --ion-background-color for default page color.
-  // --background: var(--ion-color-primary);
-  // --color: var(--ion-color-primary-contrast);
-}
-
-ion-content {
-  // General padding is already applied via class="ion-padding" in HTML.
-  // Add specific padding if needed.
+// General Modal Styling
+ion-header ion-toolbar[color="primary"] {
+  // Using primary color as set in HTML.
+  ion-title {
+    font-size: 1.1em;
+    font-weight: 600;
+  }
+  ion-button { // Close button
+    --color: var(--ion-color-primary-contrast, #fff); // Ensure contrast
+  }
 }
 
 ion-list {
-  background: transparent; // Ensure list background doesn't clash
-}
-
-.filter-row {
-  border: 1px solid var(--ion-color-medium-tint, #e0e0e0);
-  border-radius: 8px;
-  padding: 8px 0; // Add some padding, but ion-item will handle internal padding
-  margin-bottom: 12px !important; // Ensure ion-margin-bottom is applied as expected
-
-  ion-item {
-    --padding-start: 8px; // Adjust internal padding of items if needed
-    --inner-padding-end: 8px;
-    --border-color: transparent; // Remove default item border if row has border
-    --background: transparent; // Ensure item background is transparent
-  }
+  background: transparent;
+  padding-top: 8px; 
 }
 
 ion-footer ion-toolbar {
-  // Add a subtle top border to the footer toolbar for separation
-  border-top: 1px solid var(--ion-color-medium-tint, #e0e0e0);
-  padding-top: 4px; // Ensure buttons aren't too close to the border
-  padding-bottom: 4px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-top: 1px solid var(--ion-border-color, #d7d8da);
+  background: var(--ion-toolbar-background, #f8f8f8);
+
+  ion-button {
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    --border-radius: 6px;
+  }
 }
 
-// Style for the "Add Filter Condition" button
-ion-content > ion-button[expand="block"] {
-  margin-top: 16px; // Space above the add filter button
+ion-content > ion-button[expand="block"].ion-margin-top {
+  margin-top: 20px !important;
+  margin-bottom: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  --border-radius: 6px;
 }
 
-// Message for "No fields available"
-div > ion-text[color="medium"] p {
+div.ion-text-center > ion-text[color="medium"] p { // "No fields available" message
   text-align: center;
   font-size: 1em;
   padding: 20px;
-}
-
-// Ensure datetime modal appears correctly if used
-ion-modal {
-  ion-datetime {
-    // Customizations for datetime if needed
-  }
 }

@@ -1,0 +1,72 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <!-- For consistency, if TabsLayoutComponent is the primary view, 
+           this page might not need its own back or menu button unless it's a sub-page.
+           If it's part of the main tabs, the tabs themselves are the navigation.
+           A menu button here would imply a different menu than one potentially in TabsLayout or AppComponent.
+      -->
+      <!-- <ion-back-button defaultHref="/tabs"></ion-back-button> -->
+      <!-- <ion-menu-button></ion-menu-button> -->
+    </ion-buttons>
+    <ion-title>{{ currentCollectionNameForDisplay || 'Collection' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">{{ currentCollectionNameForDisplay || 'Collection' }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-toolbar>
+    <ion-searchbar
+      [value]="searchTerm"
+      (ionInput)="onSearchTermChanged($event.target.value)"
+      placeholder="Search..."
+      showClearButton="always"
+      debounce="300">
+    </ion-searchbar>
+    <ion-buttons slot="end">
+      <ion-button (click)="openAdvancedFilterModal()" title="Advanced Filters" 
+                  [color]="advancedFilterConditions.length > 0 ? 'warning' : 'medium'">
+        <ion-icon name="filter-circle-outline"></ion-icon>
+        <ion-badge *ngIf="advancedFilterConditions.length > 0" color="warning" mode="dot" class="filter-badge"></ion-badge>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <ion-toolbar class="action-toolbar">
+    <ion-buttons slot="start">
+      <ion-button (click)="addNewRow()" [disabled]="!currentCollectionNameForDisplay || !currentSchema" color="primary">
+        <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+        Add Row
+      </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="deleteSelectedRows()" [disabled]="currentSelectedRows.size === 0" color="danger">
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Delete Selected ({{ currentSelectedRows.size }})
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <div *ngIf="currentCollectionNameForDisplay && currentSchema">
+    <app-smart-table 
+      [schema]="currentSchema" 
+      [data]="displayedData" <!-- Bind to displayedData -->
+      [collectionName]="currentCollectionNameForDisplay"
+      [selectedRows]="currentSelectedRows"
+      (selectedRowsChanged)="handleSelectedRowsChange($event)">
+    </app-smart-table>
+  </div>
+
+  <div *ngIf="!currentCollectionNameForDisplay" class="ion-text-center ion-padding">
+    <ion-text color="medium"><p>No collection specified or found.</p></ion-text>
+  </div>
+  
+  <div *ngIf="currentCollectionNameForDisplay && !currentSchema" class="ion-text-center ion-padding">
+    <ion-text color="danger"><p>Schema for '{{ currentCollectionNameForDisplay }}' could not be loaded.</p></ion-text>
+  </div>
+</ion-content>

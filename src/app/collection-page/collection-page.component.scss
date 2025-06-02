@@ -1,0 +1,69 @@
+// Styles for CollectionPageComponent
+
+// Toolbar containing Searchbar and Filter button
+ion-toolbar:not(.action-toolbar) { // Target the first toolbar, not the one with class .action-toolbar
+  padding-top: 2px; // Slight padding around this toolbar
+  padding-bottom: 2px;
+  --min-height: auto; // Allow toolbar to shrink a bit if content is small
+
+  ion-searchbar {
+    flex-grow: 1;
+    padding-right: 0; // Remove default end padding if buttons are immediately after
+    // --background: var(--ion-color-light-tint); // Slightly different background for search
+    // border-radius: 8px;
+  }
+
+  ion-buttons[slot="end"] {
+    ion-button { // Advanced Filter Button
+      --padding-start: 6px;
+      --padding-end: 6px;
+      margin-left: 0px; // Reduced margin next to searchbar
+
+      ion-badge.filter-badge {
+        // Style for the dot badge
+        position: absolute;
+        top: 6px; // Adjust position of the dot
+        right: 4px; 
+        font-size: 8px; // Make dot smaller if needed
+        padding: 3px; // Adjust padding for dot size
+        border-radius: 50%;
+        // --padding-start: 3px; // Ionic might have own padding vars for badge
+        // --padding-end: 3px;
+      }
+    }
+  }
+}
+
+// Toolbar for Action Buttons (Add Row, Delete Selected)
+ion-toolbar.action-toolbar {
+  --background: transparent; // Make it blend with content area or use a very light shade
+  --border-width: 0; // Remove default border if transparent
+  padding-top: 8px;
+  padding-bottom: 8px;
+  --min-height: auto;
+
+  ion-buttons {
+    ion-button {
+      font-weight: 500;
+      --border-radius: 6px;
+      // text-transform: capitalize; // Ensure consistent text case
+    }
+  }
+}
+
+// Styling for messages (no data, no search results, schema not found)
+.ion-text-center.ion-padding { // Target divs used for these messages
+  p {
+    color: var(--ion-color-step-500, #7b7b7b); // Slightly softer medium
+    font-size: 1em;
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
+  ion-button[fill="clear"] { // For "Add the first row?" button
+    font-weight: 500;
+    // text-transform: capitalize;
+  }
+  &.ion-text-danger p { // For error messages like schema not found
+      color: var(--ion-color-danger-shade);
+  }
+}

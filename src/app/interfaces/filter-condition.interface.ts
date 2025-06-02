@@ -1,6 +1,6 @@
 import { FieldSchema } from "../services/schema.service"; // Assuming FieldSchema might be useful here
 
-export type FilterOperator =
+export type FilterOperator = 
   | 'equals' | 'notEquals'
   | 'contains' | 'doesNotContain' | 'startsWith' | 'endsWith'
   | 'greaterThan' | 'lessThan' | 'greaterThanOrEqual' | 'lessThanOrEqual' | 'between'

@@ -23,7 +23,7 @@ export class TabsPageComponent implements OnInit {
 
   async saveAllChanges(): Promise<void> {
     const pendingChanges = this.dataService.getPendingChanges();
-
+    
     console.log('Pending Changes:', pendingChanges);
     // Here, you would typically send these changes to a backend API.
     // For this task, we're just logging them and then committing locally.

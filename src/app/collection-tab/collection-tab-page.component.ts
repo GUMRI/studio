@@ -57,7 +57,7 @@ export class CollectionTabPageComponent implements OnInit {
       }
       // Selection should ideally be based on IDs if data can change instance
       // For now, clearing selection on re-enter is safer if list instances change
-      this.deselectAllRows();
+      this.deselectAllRows(); 
     }
   }
 
@@ -92,7 +92,7 @@ export class CollectionTabPageComponent implements OnInit {
       this.columnDefinitions = [];
     }
     this.applyFiltersAndSearch(); // Initial application of filters (which will just copy data if no search term)
-    this.deselectAllRows();
+    this.deselectAllRows(); 
   }
 
   // --- Search and Filter ---
@@ -161,7 +161,7 @@ export class CollectionTabPageComponent implements OnInit {
                 valueToSearch = String(displayValue);
              }
           }
-
+          
           switch (colDef.type) {
             case 'string':
             case 'enum':
@@ -177,7 +177,7 @@ export class CollectionTabPageComponent implements OnInit {
               }
               return false;
             case 'object':
-              return false;
+              return false; 
             default:
               return false;
           }
@@ -259,13 +259,13 @@ export class CollectionTabPageComponent implements OnInit {
         newRow[field.name] = this.getDefaultValueForField(field);
       }
     });
-
+    
     // Add to the main collectionData array first
-    this.collectionData.unshift(newRow);
+    this.collectionData.unshift(newRow); 
     this.dataService.updateData(this.collectionName, this.collectionData); // Update service
-
+    
     // Re-apply filters. If the new row matches the current search term, it will appear.
-    this.applyFiltersAndSearch();
+    this.applyFiltersAndSearch(); 
     // Consider if a new row should always be visible, e.g. by clearing search or selecting it.
     // For now, it will only show if it matches active search.
   }
@@ -309,15 +309,15 @@ export class CollectionTabPageComponent implements OnInit {
   private performDelete(): void {
     // Filter from the main collectionData list
     this.collectionData = this.collectionData.filter(row => !this.selectedRows.has(row));
-
+    
     if (this.collectionName) {
         this.dataService.updateData(this.collectionName, this.collectionData); // Update service
     }
-
+    
     this.selectedRows.clear(); // Clear selection
     this.applyFiltersAndSearch(); // Refresh the filtered list
   }
-
+  
   // --- Data Persistence (Placeholder) ---
   // Call this method after add/delete to update the DataService
   // This is a simplified approach. A more robust solution would involve a "Save" button.

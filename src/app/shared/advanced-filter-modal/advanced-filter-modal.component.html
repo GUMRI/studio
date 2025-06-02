@@ -1,85 +1,112 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-title>Advanced Filters</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="dismissModal(false)">Close</ion-button>
+      <ion-button (click)="dismissModal(false)" color="light">Close</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <div *ngIf="fields.length === 0">
-    <ion-text color="medium"><p>No fields available for filtering.</p></ion-text>
+  <div *ngIf="availableFields.length === 0" class="ion-text-center">
+    <ion-text color="medium"><p>No fields available for filtering in the provided schema.</p></ion-text>
   </div>
 
-  <ion-list *ngIf="fields.length > 0">
-    <div *ngFor="let filter of currentFilters; let i = index; trackBy: trackByFilterId" class="filter-row ion-margin-bottom">
-      <ion-item lines="full">
-        <ion-grid>
+  <ion-list *ngIf="availableFields.length > 0">
+    <div *ngFor="let filter of currentFilters; let i = index; trackBy: trackById" class="filter-row ion-margin-bottom">
+      <ion-item lines="none" class="filter-item-container">
+        <ion-grid fixed>
           <ion-row class="ion-align-items-center">
-            <ion-col size="12" size-sm="3">
-              <ion-select
-                [value]="filter.field"
-                (ionChange)="onFieldChange(filter, $event.detail.value)"
-                placeholder="Select Field"
-                interface="popover">
-                <ion-select-option *ngFor="let field of fields" [value]="field.name">
-                  {{ field.label || field.name }}
+            <ion-col size="12" size-md="4">
+              <ion-label position="stacked">Field</ion-label>
+              <ion-select 
+                [value]="filter.fieldPath" 
+                (ionChange)="onFieldSelected(filter, $event.detail.value)" 
+                placeholder="Select Field" 
+                interface="popover"
+                class="full-width-select">
+                <ion-select-option *ngFor="let field of availableFields" [value]="field.path">
+                  {{ field.label }}
                 </ion-select-option>
               </ion-select>
             </ion-col>
 
-            <ion-col size="12" size-sm="3">
-              <ion-select
-                [value]="filter.operator"
-                (ionChange)="filter.operator = $event.detail.value; filter.value = undefined; filter.value2 = undefined"
-                placeholder="Operator"
-                interface="popover">
-                <ion-select-option *ngFor="let op of getOperatorsForFilterCondition(filter)" [value]="op">
+            <ion-col size="12" size-md="3" *ngIf="filter.fieldSchema">
+              <ion-label position="stacked">Operator</ion-label>
+              <ion-select 
+                [value]="filter.operator" 
+                (ionChange)="filter.operator = $event.detail.value; filter.value = undefined; filter.value2 = undefined" 
+                placeholder="Operator" 
+                interface="popover"
+                class="full-width-select">
+                <ion-select-option *ngFor="let op of getApplicableOperators(filter.fieldSchema)" [value]="op">
                   {{ op }}
                 </ion-select-option>
               </ion-select>
             </ion-col>
 
-            <ion-col size="12" size-sm="5" *ngIf="!isOperatorUnary(filter.operator)">
-              <ion-input
-                *ngIf="isOperatorBinary(filter.operator) || (isOperatorTernary(filter.operator) && filter.fieldType !== 'date')"
-                [type]="filter.fieldType === 'number' ? 'number' : (filter.fieldType === 'date' ? 'date' : 'text')"
+            <ion-col size="12" size-md="4" *ngIf="filter.fieldSchema && !isOperatorUnary(filter.operator)">
+              <ion-label position="stacked">Value</ion-label>
+              <!-- Single value input -->
+              <ion-input 
+                *ngIf="!isOperatorTernary(filter.operator) && filter.fieldSchema?.type !== 'date' && filter.fieldSchema?.type !== 'boolean'"
+                [type]="filter.fieldSchema?.type === 'number' ? 'number' : 'text'"
                 [(ngModel)]="filter.value"
-                placeholder="Value"
+                placeholder="Enter value"
                 [debounce]="300">
               </ion-input>
+              
+              <!-- Boolean Select -->
+              <ion-select *ngIf="!isOperatorTernary(filter.operator) && filter.fieldSchema?.type === 'boolean'"
+                [(ngModel)]="filter.value" placeholder="Select Value" interface="popover" class="full-width-select">
+                <ion-select-option [value]="true">True</ion-select-option>
+                <ion-select-option [value]="false">False</ion-select-option>
+              </ion-select>
 
-              <ion-datetime-button datetime="datetime-{{filter.id}}" *ngIf="isOperatorBinary(filter.operator) && filter.fieldType === 'date'"></ion-datetime-button>
-              <ion-modal [keepContentsMounted]="true" *ngIf="isOperatorBinary(filter.operator) && filter.fieldType === 'date'">
-                <ion-datetime
-                  id="datetime-{{filter.id}}"
-                  [(ngModel)]="filter.value"
-                  presentation="date"
-                  showDefaultButtons="true"
-                  (ionChange)="filter.value = $event.detail.value">
-                </ion-datetime>
+              <!-- Date Input -->
+              <ion-datetime-button datetime="datetime-val-{{filter.id}}" 
+                *ngIf="!isOperatorTernary(filter.operator) && filter.fieldSchema?.type === 'date'"></ion-datetime-button>
+              <ion-modal [keepContentsMounted]="true" 
+                *ngIf="!isOperatorTernary(filter.operator) && filter.fieldSchema?.type === 'date'">
+                <ion-datetime id="datetime-val-{{filter.id}}" [(ngModel)]="filter.value" presentation="date" showDefaultButtons="true"></ion-datetime>
               </ion-modal>
 
+              <!-- 'Between' operator inputs -->
               <div *ngIf="isOperatorTernary(filter.operator)" class="between-inputs">
                 <ion-input
-                  [type]="filter.fieldType === 'number' ? 'number' : 'text'"
+                  [type]="filter.fieldSchema?.type === 'number' ? 'number' : (filter.fieldSchema?.type === 'date' ? 'date' : 'text')"
                   [(ngModel)]="filter.value"
-                  placeholder="From"
+                  [placeholder]="filter.fieldSchema?.type === 'date' ? '' : 'From'"
                   [debounce]="300">
                 </ion-input>
-                <ion-text class="ion-padding-horizontal">-</ion-text>
+                 <ion-datetime-button datetime="datetime-from-{{filter.id}}" *ngIf="filter.fieldSchema?.type === 'date'"></ion-datetime-button>
+                 <ion-modal [keepContentsMounted]="true" *ngIf="filter.fieldSchema?.type === 'date'">
+                    <ion-datetime id="datetime-from-{{filter.id}}" [(ngModel)]="filter.value" presentation="date" showDefaultButtons="true"></ion-datetime>
+                 </ion-modal>
+
+                <ion-text class="ion-padding-horizontal" *ngIf="filter.fieldSchema?.type !== 'date'">-</ion-text>
+                
                 <ion-input
-                  [type]="filter.fieldType === 'number' ? 'number' : 'text'"
+                  [type]="filter.fieldSchema?.type === 'number' ? 'number' : (filter.fieldSchema?.type === 'date' ? 'date' : 'text')"
                   [(ngModel)]="filter.value2"
-                  placeholder="To"
+                  [placeholder]="filter.fieldSchema?.type === 'date' ? '' : 'To'"
                   [debounce]="300">
                 </ion-input>
-                 <!-- Date 'between' would need two ion-datetime, simplified for now -->
+                <ion-datetime-button datetime="datetime-to-{{filter.id}}" *ngIf="filter.fieldSchema?.type === 'date'"></ion-datetime-button>
+                 <ion-modal [keepContentsMounted]="true" *ngIf="filter.fieldSchema?.type === 'date'">
+                    <ion-datetime id="datetime-to-{{filter.id}}" [(ngModel)]="filter.value2" presentation="date" showDefaultButtons="true"></ion-datetime>
+                 </ion-modal>
               </div>
             </ion-col>
-            <ion-col size="12" size-sm="1" class="ion-text-end">
-              <ion-button (click)="removeFilter(i)" fill="clear" color="danger" [disabled]="currentFilters.length <= 1 && i === 0">
+            
+            <!-- Placeholder for unary operators that don't need value input -->
+            <ion-col size="12" size-md="4" *ngIf="filter.fieldSchema && isOperatorUnary(filter.operator)" class="unary-placeholder">
+              <ion-text color="medium" class="ion-text-center"></ion-text>
+            </ion-col>
+
+
+            <ion-col size="12" size-md="1" class="ion-text-center remove-button-col">
+              <ion-button (click)="removeFilterCondition(filter.id)" fill="clear" color="danger" title="Remove Filter">
                 <ion-icon name="remove-circle-outline" slot="icon-only"></ion-icon>
               </ion-button>
             </ion-col>
@@ -89,19 +116,19 @@
     </div>
   </ion-list>
 
-  <ion-button expand="block" (click)="addFilter()" [disabled]="fields.length === 0">
+  <ion-button expand="block" (click)="addFilterCondition()" [disabled]="availableFields.length === 0" class="ion-margin-top">
     <ion-icon name="add-outline" slot="start"></ion-icon>
-    Add Filter Condition
+    Add Filter
   </ion-button>
 </ion-content>
 
 <ion-footer>
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button (click)="dismissModal(false)" color="medium">Cancel</ion-button>
+      <ion-button (click)="dismissModal(false)" color="medium" fill="clear">Cancel</ion-button>
     </ion-buttons>
     <ion-buttons slot="end">
-      <ion-button (click)="dismissModal(true)" color="primary" [disabled]="currentFilters.length === 0 && fields.length > 0">Apply Filters</ion-button>
+      <ion-button (click)="dismissModal(true)" color="primary" fill="solid" [disabled]="currentFilters.length === 0 && availableFields.length > 0">Apply</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-footer>

@@ -1,107 +1,199 @@
 import { Injectable } from '@angular/core';
-import { SchemaService } from './schema.service'; // Assuming SchemaService can provide ID field names
+import { SchemaService, JsonSchema } from './schema.service';
+import { faker } from '@faker-js/faker';
 
-interface PendingChanges {
-  added: { collectionName: string, records: any[] }[];
-  deleted: { collectionName: string, records: any[] }[];
-  updated: { collectionName: string, records: any[] }[];
+export interface PendingChangeItem { // Exporting for potential use elsewhere, e.g. in a summary view
+  collectionName: string;
+  records: any[];
+}
+export interface PendingChanges {
+  added: PendingChangeItem[];
+  deleted: PendingChangeItem[];
+  updated: PendingChangeItem[];
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class DataService {
-  // Stores the current live data
-  private liveData: Map<string, any[]> = new Map();
-  // Stores a deep copy of the data as it was when first loaded or last saved
+  private collectionsData: Map<string, any[]> = new Map();
   private initialDataState: Map<string, any[]> = new Map();
 
-  // Initial hardcoded data (can be loaded from a file or API in a real app)
-  private seedData: { [collectionName: string]: any[] } = {
-    users: [
-      { id: 1, name: 'Alice Wonderland', email: 'alice@example.com', isActive: true, registrationDate: '2023-01-15' },
-      { id: 2, name: 'Bob The Builder', email: 'bob@example.com', isActive: false, registrationDate: '2022-07-20' },
-      { id: 3, name: 'Charlie Brown', email: 'charlie@example.com', isActive: true, registrationDate: '2023-03-10' },
-    ],
-    orders: [
-      { id: 101, userId: 1, orderDate: '2023-02-20', totalAmount: 150.00, status: 'delivered' },
-      { id: 102, userId: 2, orderDate: '2023-03-01', totalAmount: 75.50, status: 'shipped' },
-      { id: 103, userId: 1, orderDate: '2023-03-05', totalAmount: 220.25, status: 'pending' },
-      { id: 104, userId: 3, orderDate: '2023-04-10', totalAmount: 99.99, status: 'shipped' },
-    ],
-    products: [
-      { id: 201, name: 'Laptop Pro', price: 1200.00, stockQuantity: 50, tags: ['electronics', 'computer'], dimensions: { length: 35, width: 25, height: 2.5 } },
-      { id: 202, name: 'Wireless Mouse', price: 25.00, stockQuantity: 200, tags: ['electronics', 'accessory'], dimensions: { length: 10, width: 6, height: 3 } },
-      { id: 203, name: 'Coffee Maker', price: 70.00, stockQuantity: 75, tags: ['kitchen', 'appliance'], dimensions: { length: 20, width: 15, height: 30 } },
-    ]
-  };
 
   constructor(private schemaService: SchemaService) {
-    // Initialize liveData and initialDataState with seed data
-    Object.keys(this.seedData).forEach(collectionName => {
-      const data = JSON.parse(JSON.stringify(this.seedData[collectionName])); // Deep copy
-      this.liveData.set(collectionName, data);
-      this.initialDataState.set(collectionName, JSON.parse(JSON.stringify(data))); // Another deep copy for initial state
+    this.loadInitialData();
+  }
+
+  private loadInitialData(): void {
+    const schemaNames = this.schemaService.getAllSchemaNames();
+    schemaNames.forEach(name => {
+      const schema = this.schemaService.getSchema(name);
+      if (schema) {
+        // Generate between 3 and 7 records for each collection
+        const mockData = Array.from({ length: faker.number.int({ min:3, max: 7 }) }, () => this.generateMockRecord(schema));
+        this.collectionsData.set(name, mockData);
+        // Deep copy for initial state using JSON stringify/parse
+        this.initialDataState.set(name, JSON.parse(JSON.stringify(mockData)));
+      }
     });
   }
 
-  private getCollectionIdField(collectionName: string): string | undefined {
-    const schema = this.schemaService.getSchema(collectionName);
-    const idField = schema?.fields.find(f => f.isId);
-    return idField?.name;
+  private generateMockRecord(schema: JsonSchema, currentPath: string = ''): any {
+    if (!schema || schema.type !== 'object' || !schema.properties) {
+      return this.generatePrimitiveValue(schema); // Fallback for non-object or schemaless parts
+    }
+  
+    const record: { [key: string]: any } = {};
+    const properties = schema.properties;
+  
+    Object.keys(properties).forEach(key => {
+      const fieldSchema = properties[key];
+      const isRequired = schema.required?.includes(key);
+  
+      if (!isRequired && Math.random() < 0.3) { // 30% chance to skip non-required fields
+        return; 
+      }
+      record[key] = this.generateFieldValue(fieldSchema, `${currentPath}${key}`);
+    });
+  
+    if (schema.required) {
+      schema.required.forEach(requiredKey => {
+        if (record[requiredKey] === undefined && properties[requiredKey]) { // Ensure property exists in schema
+          record[requiredKey] = this.generateFieldValue(properties[requiredKey], `${currentPath}${requiredKey}`);
+        }
+      });
+    }
+    return record;
+  }
+  
+  private generateFieldValue(fieldSchema: JsonSchema, fieldPath: string): any {
+    if (fieldSchema.default !== undefined) {
+      return JSON.parse(JSON.stringify(fieldSchema.default));
+    }
+    if (fieldSchema.enum && fieldSchema.enum.length > 0) {
+      return faker.helpers.arrayElement(fieldSchema.enum);
+    }
+  
+    if (fieldSchema.format) {
+      switch (fieldSchema.format) {
+        case 'email': return faker.internet.email();
+        case 'date-time': return faker.date.recent({days: 30}).toISOString();
+        case 'uri': return faker.internet.url();
+        case 'uuid': return faker.string.uuid();
+        case 'ipv4': return faker.internet.ip();
+      }
+    }
+  
+    switch (fieldSchema.type) {
+      case 'string':
+        const lcPath = fieldPath.toLowerCase();
+        if (lcPath.includes('firstname')) return faker.person.firstName();
+        if (lcPath.includes('lastname')) return faker.person.lastName();
+        if (lcPath.includes('name')) return faker.person.fullName(); // General name if not first/last
+        if (lcPath.includes('username')) return faker.internet.userName();
+        if (lcPath.includes('city')) return faker.location.city();
+        if (lcPath.includes('street')) return faker.location.streetAddress();
+        if (lcPath.includes('country')) return faker.location.country();
+        if (lcPath.includes('zipcode') || lcPath.includes('zipCode')) return faker.location.zipCode();
+        if (lcPath.includes('bio')) return faker.lorem.paragraph();
+        if (lcPath.includes('avatar')) return faker.image.avatar();
+        return faker.lorem.words(faker.number.int({min:1, max:5}));
+      case 'number':
+        // Consider schema min/max if available, and if it's an ID for foreign key
+        const isForeignKey = fieldSchema.ui?.foreignKey; // Check UI hint for foreign key
+        return faker.number.int({ min: (isForeignKey ? 1 : 0), max: (isForeignKey ? 10 : 1000) }); // Smaller range for FK IDs assuming fewer related items
+      case 'boolean':
+        return faker.datatype.boolean();
+      case 'object':
+        return this.generateMockRecord(fieldSchema, `${fieldPath}.`);
+      case 'array':
+        const arrayLength = faker.number.int({ min: 1, max: 3 });
+        if (fieldSchema.items && !Array.isArray(fieldSchema.items)) {
+          return Array.from({ length: arrayLength }, () => this.generateFieldValue(fieldSchema.items as JsonSchema, `${fieldPath}.items`));
+        }
+        return []; 
+      default:
+        return undefined;
+    }
+  }
+  
+  private generatePrimitiveValue(schema: JsonSchema): any {
+    if (schema.default !== undefined) return schema.default;
+    if (schema.enum && schema.enum.length > 0) return faker.helpers.arrayElement(schema.enum);
+    switch (schema.type) {
+      case 'string': return faker.lorem.word();
+      case 'number': return faker.number.int({max:100});
+      case 'boolean': return faker.datatype.boolean();
+      default: return undefined;
+    }
   }
 
   getData(collectionName: string): any[] {
-    if (!this.liveData.has(collectionName)) {
-      // If data for this collection wasn't pre-seeded, initialize it.
-      // This could also be a point to fetch from a backend if not already done.
-      const dataFromSeed = this.seedData[collectionName] ? JSON.parse(JSON.stringify(this.seedData[collectionName])) : [];
-      this.liveData.set(collectionName, dataFromSeed);
-      this.initialDataState.set(collectionName, JSON.parse(JSON.stringify(dataFromSeed)));
-    }
-    // Return a copy to prevent direct modification of the service's internal array by components
-    // This was a previous note, but for add/delete, the component directly modifies its copy and calls updateData.
-    // For now, returning the direct reference and relying on updateData to manage state.
-    return this.liveData.get(collectionName) || [];
+    return this.collectionsData.get(collectionName) || [];
   }
 
   updateData(collectionName: string, newData: any[]): void {
-    // This method is called by components after they modify their local copy of data (e.g., add/delete)
-    // It replaces the entire dataset for the collection in liveData.
-    this.liveData.set(collectionName, [...newData]); // Store a copy of the new data
-    console.log(`Live data for ${collectionName} updated. Current items: ${newData.length}`);
+    this.collectionsData.set(collectionName, [...newData]);
+  }
+
+  getNewRecordScaffold(collectionName: string): any | undefined {
+    const schema = this.schemaService.getSchema(collectionName);
+    if (!schema || schema.type !== 'object' || !schema.properties) {
+      return undefined;
+    }
+    return this.generateScaffoldFromProperties(schema.properties);
+  }
+
+  private generateScaffoldFromProperties(properties: {[key: string]: JsonSchema}): any {
+    const scaffold: {[key: string]: any} = {};
+    Object.keys(properties).forEach(key => {
+      const fieldSchema = properties[key];
+      if (fieldSchema.default !== undefined) {
+        scaffold[key] = JSON.parse(JSON.stringify(fieldSchema.default));
+      } else if (fieldSchema.type === 'array') {
+        scaffold[key] = [];
+      } else if (fieldSchema.type === 'object' && fieldSchema.properties) {
+        scaffold[key] = this.generateScaffoldFromProperties(fieldSchema.properties);
+      } else {
+        scaffold[key] = undefined; // Or null, depending on desired default for empty fields
+      }
+    });
+    return scaffold;
   }
 
   getPendingChanges(): PendingChanges {
     const changes: PendingChanges = { added: [], deleted: [], updated: [] };
 
-    this.liveData.forEach((currentItems, collectionName) => {
+    this.collectionsData.forEach((currentItems, collectionName) => {
       const initialItems = this.initialDataState.get(collectionName) || [];
-      const idField = this.getCollectionIdField(collectionName) || 'id'; // Default to 'id' if no schema
+      const idField = this.getCollectionIdField(collectionName);
 
-      const currentIds = new Set(currentItems.map(item => item[idField]));
-      const initialIds = new Set(initialItems.map(item => item[idField]));
+      if (!idField) {
+        console.warn(`No ID field determined for collection ${collectionName}. Change tracking may be inaccurate.`);
+        // Handle collections without a clear ID field: treat all current as added, all initial as deleted if counts differ.
+        // Or simply skip them for pending changes. For now, we'll rely on an ID field.
+        return;
+      }
 
-      // Added: In current but not in initial
-      const addedRecords = currentItems.filter(item => !initialIds.has(item[idField]));
+      const currentItemMap = new Map(currentItems.map(item => [item[idField], item]));
+      const initialItemMap = new Map(initialItems.map(item => [item[idField], item]));
+
+      const addedRecords = currentItems.filter(item => !initialItemMap.has(item[idField]));
       if (addedRecords.length > 0) {
         changes.added.push({ collectionName, records: addedRecords });
       }
 
-      // Deleted: In initial but not in current
-      const deletedRecords = initialItems.filter(item => !currentIds.has(item[idField]));
+      const deletedRecords = initialItems.filter(item => !currentItemMap.has(item[idField]));
       if (deletedRecords.length > 0) {
         changes.deleted.push({ collectionName, records: deletedRecords });
       }
-
-      // Updated: In both but different (simple JSON stringify comparison for objects)
+      
       const updatedRecords: any[] = [];
-      currentItems.forEach(currentItem => {
-        if (initialIds.has(currentItem[idField])) { // Exists in both
-          const initialItem = initialItems.find(item => item[idField] === currentItem[idField]);
-          // Simple deep comparison. For complex objects or performance, a more robust diff is needed.
+      currentItemMap.forEach((currentItem, id) => {
+        if (initialItemMap.has(id)) { 
+          const initialItem = initialItemMap.get(id);
           if (JSON.stringify(currentItem) !== JSON.stringify(initialItem)) {
-            updatedRecords.push(currentItem); // Report the current state of the updated item
+            updatedRecords.push(currentItem); 
           }
         }
       });
@@ -109,20 +201,40 @@ export class DataService {
         changes.updated.push({ collectionName, records: updatedRecords });
       }
     });
-
     return changes;
   }
 
   commitChanges(): void {
-    this.initialDataState = new Map(); // Clear old initial state
-    this.liveData.forEach((data, collectionName) => {
-      // Update initialDataState to match the current liveData (deep copy)
+    this.initialDataState = new Map(); 
+    this.collectionsData.forEach((data, collectionName) => {
       this.initialDataState.set(collectionName, JSON.parse(JSON.stringify(data)));
     });
-    console.log('Changes committed. Initial data state updated to current live data.');
+    // console.log('Changes committed. Initial data state updated.');
   }
 
-  // Optional: Add methods for more granular CRUD if needed later,
-  // which would directly update liveData and allow more precise change tracking.
-  // e.g., addItemToCollection, updateItemInCollection, deleteItemFromCollection
+  /**
+   * Determines the ID field for a collection based on its schema.
+   * Prioritizes 'id', then fields ending with 'Id' (case-insensitive),
+   * then looks for a field with format 'uuid'.
+   * As a last resort, uses the first property in the schema.
+   */
+  private getCollectionIdField(collectionName: string): string | undefined {
+    const schema = this.schemaService.getSchema(collectionName);
+    if (!schema || schema.type !== 'object' || !schema.properties) {
+        return undefined;
+    }
+    const properties = schema.properties;
+    const propKeys = Object.keys(properties);
+
+    if (properties['id']) return 'id'; // Standard 'id' field
+
+    for (const key of propKeys) { // Fields like 'userId', 'orderId'
+        if (key.toLowerCase().endsWith('id')) return key;
+    }
+    for (const key of propKeys) { // Fields with UUID format
+        if (properties[key].format === 'uuid') return key;
+    }
+    
+    return propKeys.length > 0 ? propKeys[0] : undefined; // Fallback to the first property
+  }
 }

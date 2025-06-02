@@ -1,0 +1,48 @@
+// Styles for TabsLayoutComponent
+
+ion-header {
+  ion-toolbar[color="primary"] {
+    // Ensure title and buttons have good contrast on primary background
+    ion-title {
+      font-weight: bold;
+      letter-spacing: 0.5px; // Slight spacing for title
+    }
+
+    ion-button[fill="solid"][color="light"] {
+      // This combination should provide good contrast.
+      // Add custom styling if specific visual tweaks are needed.
+      // Example: ensure consistent height or padding if defaults vary too much.
+      --border-radius: 6px; // Slightly softer radius
+      font-weight: 500;
+    }
+  }
+}
+
+ion-tab-bar {
+  // border-top: 1px solid var(--ion-border-color, #e0e0e0); // Standard border color
+  background: var(--ion-toolbar-background, #f8f8f8); // Ensure it matches typical toolbar bg if not default
+
+  ion-tab-button {
+    --color: var(--ion-color-step-600, #666666); // Slightly darker for inactive tabs for better readability
+    --color-selected: var(--ion-color-primary);
+    --padding-top: 6px;
+    --padding-bottom: 6px;
+    // --ripple-color: var(--ion-color-primary-tint);
+
+    ion-icon {
+      font-size: 1.6em; // Default is often 1.8em or 2em, can be adjusted
+    }
+
+    ion-label {
+      font-size: 0.85em; // Slightly smaller label for a cleaner look
+      font-weight: 500; // Give labels a bit more presence
+    }
+
+    &.tab-selected {
+      // ion-label {
+      //   font-weight: 600; // Bolder label for selected tab
+      // }
+      // The --color-selected should handle label and icon color.
+    }
+  }
+}

@@ -1,0 +1,31 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button> <!-- Assuming a menu might be added later -->
+    </ion-buttons>
+    <ion-title>Data Studio</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveAllChanges()" fill="solid" color="light">
+        <ion-icon slot="start" name="save-outline"></ion-icon>
+        Save All
+        <!-- Optional: Badge for pending changes -->
+        <!-- <ion-badge *ngIf="hasPendingChanges" color="warning" slot="end">!</ion-badge> -->
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<!-- ion-content is not strictly needed here if ion-tabs is the root content element -->
+<!-- However, if you wanted pull-to-refresh or other ion-content features for the whole tabs view, -->
+<!-- you might wrap ion-tabs in ion-content. For now, ion-tabs directly. -->
+
+<ion-tabs>
+  <ion-tab-bar slot="bottom">
+    <ion-tab-button *ngFor="let tab of availableTabs" [tab]="tab.name" [routerLink]="[tab.name]">
+      <ion-icon [name]="tab.icon || 'ellipse-outline'" aria-hidden="true"></ion-icon>
+      <ion-label>{{ tab.label }}</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
+
+  <ion-router-outlet></ion-router-outlet> <!-- This outlet renders CollectionPageComponent -->
+</ion-tabs>
