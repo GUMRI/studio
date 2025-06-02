@@ -55,10 +55,12 @@
   <div *ngIf="currentCollectionNameForDisplay && currentSchema">
     <app-smart-table 
       [schema]="currentSchema" 
-      [data]="displayedData" <!-- Bind to displayedData -->
+      [data]="displayedData"
       [collectionName]="currentCollectionNameForDisplay"
       [selectedRows]="currentSelectedRows"
-      (selectedRowsChanged)="handleSelectedRowsChange($event)">
+      (selectedRowsChanged)="handleSelectedRowsChange($event)"
+      (viewArrayItems)="presentArrayItemsModal($event)"
+      (viewObjectDetails)="presentObjectDetailsModal($event)">
     </app-smart-table>
   </div>
 

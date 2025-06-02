@@ -29,15 +29,37 @@ table {
   // Header styling
   th {
     font-weight: 600;
-    color: var(--ion-text-color-step-800, #3a3a3a); // Slightly darker text for headers
-    background-color: var(--ion-color-step-50, #f7f7f7); // Very light background for headers
+    color: var(--ion-text-color-step-800, #3a3a3a);
+    background-color: var(--ion-color-step-50, #f7f7f7);
     white-space: nowrap;
+    position: relative; // For potential absolute positioning of indicators if needed
+
+    .header-content {
+      display: flex;
+      align-items: center; // Align items vertically
+      gap: 4px; // Space between label, type, and indicator
+    }
+
+    .label-text {
+      flex-grow: 1; // Allow label to take most space
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis; // In case label itself is too long
+    }
+
+    .type-indicator {
+      font-size: 0.8em;
+      color: var(--ion-color-step-500, #7b7b7b); // Muted color for type
+      font-weight: normal; // Normal weight for type
+      white-space: nowrap;
+    }
 
     .required-indicator {
-      color: var(--ion-color-danger-shade, #cf3c4f); // Darker red for better contrast
-      margin-left: 3px;
+      color: var(--ion-color-danger-shade, #cf3c4f);
+      margin-left: 0px; // Adjusted as gap is used in header-content
       font-weight: bold;
-      display: inline-block; // Ensure it doesn't affect line height too much
+      display: inline-block;
+      padding-left: 2px; // Slight padding from the type indicator or label
     }
   }
 
@@ -61,17 +83,65 @@ table {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 280px; // Increased max-width slightly
+    max-width: 280px;
 
-    &.placeholder-cell,
-    &.encrypted-cell {
+    // Class for the generic placeholder text like [Object] or [Array] from getDisplayValue
+    &.placeholder-cell { 
       font-style: italic;
-      color: var(--ion-color-step-400, #999999); // Lighter for placeholders
+      color: var(--ion-color-step-400, #999999);
+    }
+    
+    // Class for the specific [Encrypted] span
+    .encrypted-text { 
+      font-style: italic;
+      color: var(--ion-color-step-400, #999999);
+      // If it needs to be distinct from other placeholders:
+      // color: var(--ion-color-warning-shade, #b26f00); 
+    }
+  
+    // Styling for ion-toggle within a cell
+    .cell-toggle {
+      padding: 0; // Remove extra padding
+      margin: -4px 0; // Fine-tune vertical centering within cell height
+      transform: scale(0.8); // Slightly adjust scale for optimal size
+      transform-origin: center; 
+      // For disabled state, Ionic adds opacity. Ensure it's clear.
+      &[aria-disabled="true"] { // More specific selector for disabled state
+        // --handle-background-checked: var(--ion-color-medium-tint); // Example if more distinction needed
+      }
     }
 
-    span[ngSwitch="'boolean'"] .boolean-icon {
-      font-size: 1.3em; // Slightly larger icons
-      vertical-align: middle; // Better alignment with text if any
+    // Styling for array/object cells that have a text part and a button part
+    .cell-complex-type {
+      display: flex;
+      align-items: center;
+      justify-content: space-between; // Pushes text and button to opposite ends
+      width: 100%;
+      gap: 4px; // Small gap between text and button
+
+      span { // The text part (e.g., "[3 items]" or "[Object]")
+        flex-grow: 1; // Allows text to take available space
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ion-color-primary); // Make placeholder text for complex types slightly interactive looking
+        font-weight: 500; // Slightly bolder to indicate it's interactive
+      }
+
+      .cell-action-button {
+        --padding-start: 4px; // Compact padding
+        --padding-end: 4px;
+        min-width: auto; 
+        height: auto; 
+        margin-left: 0; // Gap is handled by parent flex
+        ion-icon {
+          font-size: 1.3em; // Adjust icon size
+          color: var(--ion-color-primary); // Consistent interactive color
+        }
+        &:hover ion-icon {
+            color: var(--ion-color-primary-shade);
+        }
+      }
     }
   }
 

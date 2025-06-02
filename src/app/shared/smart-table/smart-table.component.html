@@ -12,9 +12,12 @@
         </th>
         <th *ngFor="let col of displayColumns" 
             [class.required-column]="col.isRequired"
-            title="{{ col.label }}{{ col.isRequired ? ' (Required)' : '' }}">
-          {{ col.label }}
-          <span *ngIf="col.isRequired" class="required-indicator">*</span>
+            title="{{ col.label }} (Type: {{col.type}}){{ col.isRequired ? ' - Required' : '' }}">
+          <div class="header-content">
+            <span class="label-text">{{ col.label }}</span>
+            <span class="type-indicator">({{ col.type }})</span>
+            <span *ngIf="col.isRequired" class="required-indicator" title="Required Field">*</span>
+          </div>
         </th>
       </tr>
     </thead>
@@ -30,15 +33,62 @@
             [attr.title]="getDisplayValue(item, col)"
             [class.encrypted-cell]="col.isEncrypted"
             [class.placeholder-cell]="col.type === 'object' || col.type === 'array'"
-            (click)="toggleRowSelection(item)"> <!-- Allow clicking cell to toggle selection -->
-          <span [ngSwitch]="col.type">
-            <span *ngSwitchCase="'boolean'">
-              <ion-icon [name]="item[col.path] ? 'checkmark-circle-outline' : 'ellipse-outline'"
-                        [color]="item[col.path] ? 'success' : 'medium'"
-                        class="boolean-icon"></ion-icon>
-            </span>
-            <span *ngSwitchDefault>{{ getDisplayValue(item, col) }}</span>
-          </span>
+            (click)="toggleRowSelection(item)">
+
+            <ng-container *ngIf="col.isEncrypted; else normalValueCell">
+              <span class="encrypted-text">[Encrypted]</span>
+            </ng-container>
+            <ng-template #normalValueCell>
+              <ng-container [ngSwitch]="col.type">
+
+                <!-- Boolean Type -->
+                <ion-toggle *ngSwitchCase="'boolean'"
+                            [ngModel]="item[col.path]"
+                            [disabled]="true"
+                            class="cell-toggle">
+                </ion-toggle>
+
+                <!-- Array Type -->
+                <div *ngSwitchCase="'array'" class="cell-complex-type">
+                  <span>{{ getDisplayValue(item, col) }}</span>
+                  <ion-button fill="clear" size="small" class="cell-action-button"
+                              (click)="onViewArrayItems($event, item[col.path], col, item)"
+                              [disabled]="!item[col.path] || item[col.path]?.length === 0"
+                              title="View Array Items">
+                    <ion-icon name="list-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </div>
+
+                <!-- Object Type -->
+                <div *ngSwitchCase="'object'" class="cell-complex-type">
+                  <span>{{ getDisplayValue(item, col) }}</span>
+                  <ion-button fill="clear" size="small" class="cell-action-button"
+                              (click)="onViewObjectDetails($event, item[col.path], col, item)"
+                              [disabled]="!item[col.path]"
+                              title="View Object Details">
+                    <ion-icon name="search-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </div>
+                
+                <!-- String Type with Formats -->
+                <span *ngSwitchCase="'string'">
+                  <ng-container [ngSwitch]="col.format">
+                    <span *ngSwitchCase="'date-time'">{{ item[col.path] | date:'medium' }}</span>
+                    <span *ngSwitchCase="'date'">{{ item[col.path] | date:'mediumDate' }}</span>
+                    <!-- Add other string formats like email, uri with <a> tags if needed -->
+                    <span *ngSwitchDefault>{{ item[col.path] === null || item[col.path] === undefined ? '-' : item[col.path] }}</span>
+                  </ng-container>
+                </span>
+
+                <!-- Number Type -->
+                <span *ngSwitchCase="'number'">{{ item[col.path] === null || item[col.path] === undefined ? '-' : item[col.path] }}</span>
+                <span *ngSwitchCase="'integer'">{{ item[col.path] === null || item[col.path] === undefined ? '-' : item[col.path] }}</span>
+
+
+                <!-- Default for other types or unformatted strings -->
+                <span *ngSwitchDefault>{{ getDisplayValue(item, col) }}</span>
+              </ng-container>
+            </ng-template>
         </td>
       </tr>
     </tbody>

@@ -1,0 +1,112 @@
+// Styles for ObjectDetailsModalComponent
+
+ion-header ion-toolbar[color="secondary"] {
+  ion-title {
+    font-size: 1.1em;
+    font-weight: 600;
+  }
+  ion-button[fill="clear"] { // For the close button
+    --color: var(--ion-color-secondary-contrast, #fff);
+    font-size: 1.2em;
+  }
+}
+
+ion-content {
+  .empty-message {
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--ion-color-step-500, #7b7b7b);
+    .empty-icon {
+      font-size: 2.8em;
+      margin-bottom: 12px;
+      color: var(--ion-color-step-300, #b3b3b3);
+    }
+    p {
+      font-size: 1.05em;
+      line-height: 1.4;
+    }
+  }
+
+  .details-list {
+    background: transparent;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .detail-item {
+    // Using ion-item with lines="none" and custom styling to make it card-like
+    // This avoids issues with --inner-padding of ion-card if content is complex
+    border: 1px solid var(--ion-border-color, #d7d8da);
+    border-radius: 6px;
+    margin-bottom: 12px;
+    // box-shadow: 0 1px 2px rgba(0,0,0,0.04); // Softer shadow
+    --inner-padding-top: 10px;
+    --inner-padding-bottom: 12px; // More bottom padding for value
+    --padding-start: 12px;
+    --padding-end: 12px;
+    align-items: flex-start; 
+    background: var(--ion-item-background, var(--ion-background-color, #fff));
+
+    // The ion-label with position="stacked" will be the container for label parts
+    .property-label {
+      font-size: 0.8em; // Base size for label text
+      color: var(--ion-color-step-600, #666666);
+      margin-bottom: 4px; // Space between label group and value container
+      font-weight: 500;
+      display: block; // Ensure it takes full width for text alignment
+
+      .required-indicator {
+        color: var(--ion-color-danger-shade, #cf3c4f);
+        margin-left: 4px;
+        font-weight: bold;
+      }
+      .type-hint {
+        font-style: italic;
+        margin-left: 6px;
+        font-size: 0.95em; // Relative to label font size
+        color: var(--ion-color-step-400, #999999);
+      }
+    }
+
+    .property-value-container {
+      width: 100%;
+      padding-top: 2px;
+      font-size: 0.95em; // Base font size for values
+      color: var(--ion-text-color-step-800, #3a3a3a);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 28px; // Ensure a minimum height for value area
+
+      .encrypted-text,
+      span[ngSwitchCase="'object'"], 
+      span[ngSwitchCase="'array'"] {
+        font-style: italic;
+        color: var(--ion-color-step-500, #7b7b7b);
+      }
+      
+      .value-toggle {
+        padding: 0;
+        margin: -6px 0 -6px -8px; // Nudge left to align with text start
+        transform: scale(0.8);
+        transform-origin: left center;
+      }
+
+      .property-value { // Generic class for text values if not using specific switch cases
+        white-space: normal;
+        word-break: break-all;
+      }
+
+      .nested-action-button {
+        --padding-start: 5px;
+        --padding-end: 5px;
+        min-width: auto;
+        height: auto;
+        margin-left: 8px;
+        ion-icon {
+          font-size: 1.4em;
+        }
+      }
+    }
+  }
+}

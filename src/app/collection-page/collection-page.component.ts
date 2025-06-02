@@ -1,10 +1,13 @@
 import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { IonicModule, AlertController } from '@ionic/angular'; // Import AlertController
+import { IonicModule, AlertController, ModalController } from '@ionic/angular'; // Import ModalController
 import { SchemaService, JsonSchema } from '../services/schema.service';
 import { DataService } from '../services/data.service';
 import { SmartTableComponent } from '../shared/smart-table/smart-table.component';
+import { ArrayItemsModalComponent } from '../shared/array-items-modal/array-items-modal.component'; // Import Array modal
+import { ObjectDetailsModalComponent } from '../shared/object-details-modal/object-details-modal.component'; // Import Object modal
+import { ColumnDefinition } from '../interfaces/column-definition.interface'; // Import ColumnDefinition
 
 @Component({
   selector: 'app-collection-page',
@@ -14,7 +17,12 @@ import { SmartTableComponent } from '../shared/smart-table/smart-table.component
   imports: [
     CommonModule,
     IonicModule,
-    SmartTableComponent, // Add SmartTableComponent to imports
+    SmartTableComponent,
+    // ArrayItemsModalComponent and ObjectDetailsModalComponent are presented dynamically,
+    // so they don't strictly need to be in 'imports' here if they are standalone and globally available
+    // or imported via a module that this component imports (e.g. a SharedComponentsModule).
+    // However, for standalone components being presented by ModalController, they don't need to be explicitly imported here.
+    // The ModalController handles their creation.
   ],
 })
 export class CollectionPageComponent implements OnInit, OnChanges {
@@ -33,7 +41,7 @@ export class CollectionPageComponent implements OnInit, OnChanges {
     private dataService: DataService,
     private activatedRoute: ActivatedRoute,
     private alertController: AlertController,
-    private modalController: ModalController // Inject ModalController
+    private modalController: ModalController 
   ) {}
 
   ngOnInit() {
@@ -215,23 +223,77 @@ export class CollectionPageComponent implements OnInit, OnChanges {
 
   // --- Advanced Filter Modal ---
   async openAdvancedFilterModal(): Promise<void> {
-    if (!this.currentSchema) return;
+    if (!this.currentSchema) {
+        console.warn('Cannot open advanced filter: currentSchema is null');
+        return;
+    }
+    // Ensure AdvancedFilterModalComponent is imported if not already
+    // For standalone, ModalController can create it if its definition is known (e.g. if it's in its own module or globally available)
+    const { AdvancedFilterModalComponent } = await import(
+      '../shared/advanced-filter-modal/advanced-filter-modal.component'
+    );
 
     const modal = await this.modalController.create({
       component: AdvancedFilterModalComponent,
       componentProps: {
-        schema: this.currentSchema, // Pass the full schema
-        appliedFilters: JSON.parse(JSON.stringify(this.advancedFilterConditions)) // Deep copy
+        schema: this.currentSchema,
+        appliedFilters: JSON.parse(JSON.stringify(this.advancedFilterConditions))
       }
     });
-
     await modal.present();
     const { data, role } = await modal.onWillDismiss();
-
     if (role === 'apply' && data) {
       this.advancedFilterConditions = data;
       this.applyAllFilters();
     }
+  }
+
+  // --- SmartTable Event Handlers for Modals ---
+
+  async presentArrayItemsModal(eventDetail: { itemData: any[], column: ColumnDefinition, fullRowData: any }): Promise<void> {
+    const { itemData, column, fullRowData } = eventDetail;
+    console.log('Presenting array items modal for:', column.label, itemData);
+
+    if (!column.schema || !column.schema.items) {
+        console.error('Item schema for array is missing in column definition for ' + column.path);
+        return;
+    }
+    const { ArrayItemsModalComponent } = await import(
+        '../shared/array-items-modal/array-items-modal.component'
+    );
+
+    const modal = await this.modalController.create({
+      component: ArrayItemsModalComponent,
+      componentProps: {
+        items: itemData || [], // Ensure items is always an array
+        itemSchema: column.schema.items as JsonSchema, // Pass the schema for individual items
+        parentFieldLabel: `Items in '${column.label}' (from row ID: ${fullRowData[this.getIdFieldInfo()?.name || 'id'] || 'N/A'})`
+      }
+    });
+    await modal.present();
+  }
+
+  async presentObjectDetailsModal(eventDetail: { itemData: any, column: ColumnDefinition, fullRowData: any }): Promise<void> {
+    const { itemData, column, fullRowData } = eventDetail;
+    console.log('Presenting object details modal for:', column.label, itemData);
+
+    if (!column.schema) {
+        console.error('Object schema is missing in column definition for ' + column.path);
+        return;
+    }
+     const { ObjectDetailsModalComponent } = await import(
+        '../shared/object-details-modal/object-details-modal.component'
+    );
+
+    const modal = await this.modalController.create({
+      component: ObjectDetailsModalComponent,
+      componentProps: {
+        objectData: itemData,
+        objectSchema: column.schema as JsonSchema, // Pass the schema for the object itself
+        parentFieldLabel: `Details for '${column.label}' (from row ID: ${fullRowData[this.getIdFieldInfo()?.name || 'id'] || 'N/A'})`
+      }
+    });
+    await modal.present();
   }
 
 

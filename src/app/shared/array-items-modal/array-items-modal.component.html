@@ -1,0 +1,44 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>{{ parentFieldLabel || 'Array Items' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismissModal()" fill="clear" color="light" title="Close Modal">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div *ngIf="!items || items.length === 0" class="empty-message ion-text-center">
+    <ion-icon name="list-outline" class="empty-icon"></ion-icon>
+    <p>No items to display in this array.</p>
+  </div>
+
+  <ion-list *ngIf="items && items.length > 0" lines="inset">
+    <ng-container *ngFor="let item of items; let i = index">
+      <!-- Case 1: Item schema is an object with defined properties -->
+      <ion-item *ngIf="itemSchema && itemSchema.type === 'object' && displayableProperties.length > 0" class="item-card">
+        <ion-label>
+          <h2 class="item-index-header">Item {{ i + 1 }}</h2>
+          <div *ngFor="let prop of displayableProperties" class="property-display">
+            <span class="property-label">{{ prop.label }}:</span>
+            <span class="property-value">{{ getDisplayValueForItemProperty(item, prop) }}</span>
+          </div>
+        </ion-label>
+      </ion-item>
+
+      <!-- Case 2: Item schema is for a simple type (string, number, boolean) -->
+      <ion-item *ngIf="itemSchema && (itemSchema.type === 'string' || itemSchema.type === 'number' || itemSchema.type === 'integer' || itemSchema.type === 'boolean')" class="simple-item">
+        <ion-label>{{ getDisplayValueForSimpleItem(item) }}</ion-label>
+      </ion-item>
+
+      <!-- Case 3: Item schema is an array (array of arrays - less common) or unknown complex type -->
+      <ion-item *ngIf="!itemSchema || (itemSchema.type !== 'object' && itemSchema.type !== 'string' && itemSchema.type !== 'number' && itemSchema.type !== 'integer' && itemSchema.type !== 'boolean')" class="unknown-item">
+        <ion-label text-wrap>
+          <pre>{{ item | json }}</pre> <!-- Display raw JSON for unknown/complex structures -->
+        </ion-label>
+      </ion-item>
+    </ng-container>
+  </ion-list>
+</ion-content>

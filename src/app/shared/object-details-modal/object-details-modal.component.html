@@ -1,0 +1,71 @@
+<ion-header>
+  <ion-toolbar color="secondary"> <!-- Changed color for variety -->
+    <ion-title>{{ parentFieldLabel || 'Object Details' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismissModal()" fill="clear" color="light" title="Close Modal">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div *ngIf="!objectData || displayableProperties.length === 0" class="empty-message ion-text-center">
+    <ion-icon name="document-text-outline" class="empty-icon"></ion-icon>
+    <p *ngIf="!objectData">No object data provided.</p>
+    <p *ngIf="objectData && displayableProperties.length === 0">Schema not available or object has no defined properties to display.</p>
+  </div>
+
+  <ion-list *ngIf="objectData && displayableProperties.length > 0" lines="none" class="details-list">
+    <ion-item *ngFor="let prop of displayableProperties" class="detail-item">
+      <ion-label position="stacked" class="property-label">
+        {{ prop.label }}
+        <span *ngIf="prop.isRequired" class="required-indicator" title="Required Field">*</span>
+        <span class="type-hint">({{ prop.type }})</span>
+      </ion-label>
+      
+      <div class="property-value-container">
+        <ng-container *ngIf="prop.isEncrypted; else normalValue">
+          <span class="encrypted-text property-value">[Encrypted]</span>
+        </ng-container>
+        <ng-template #normalValue>
+          <ng-container [ngSwitch]="prop.type">
+            <ion-toggle *ngSwitchCase="'boolean'"
+                        [ngModel]="prop.value"
+                        [disabled]="true"
+                        class="value-toggle">
+            </ion-toggle>
+            
+            <span *ngSwitchCase="'array'" class="property-value">
+              {{ getArrayPreview(prop.value, prop.schema?.items as any) }}
+              <!-- Add button here if we want to open ArrayItemsModal for nested arrays -->
+              <!-- 
+              <ion-button *ngIf="prop.value && prop.value.length > 0" 
+                          fill="clear" size="small" class="nested-action-button" 
+                          (click)="$event.stopPropagation(); openNestedArrayModal(prop.value, prop.schema?.items, prop.label)">
+                <ion-icon name="list-outline" slot="icon-only"></ion-icon>
+              </ion-button> 
+              -->
+            </span>
+
+            <span *ngSwitchCase="'object'" class="property-value">
+              [Object]
+              <!-- Add button here if we want to open ObjectDetailsModal for nested objects -->
+              <!-- 
+              <ion-button *ngIf="prop.value"
+                          fill="clear" size="small" class="nested-action-button"
+                          (click)="$event.stopPropagation(); openNestedObjectModal(prop.value, prop.schema, prop.label)">
+                <ion-icon name="search-outline" slot="icon-only"></ion-icon>
+              </ion-button> 
+              -->
+            </span>
+            
+            <span *ngSwitchDefault class="property-value">
+              {{ getFormattedDisplayValue(prop) }}
+            </span>
+          </ng-container>
+        </ng-template>
+      </div>
+    </ion-item>
+  </ion-list>
+</ion-content>

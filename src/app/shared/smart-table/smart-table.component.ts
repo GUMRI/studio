@@ -19,10 +19,12 @@ export class SmartTableComponent implements OnInit, OnChanges {
   @Input() data: any[] = [];
   @Input() schema: JsonSchema | null = null;
   @Input() collectionName: string | null = null;
-  @Input() selectedRows: ReadonlySet<any> = new Set(); // Input for selected rows
+  @Input() selectedRows: ReadonlySet<any> = new Set();
 
   @Output() selectedRowsChanged = new EventEmitter<Set<any>>();
-  // @Output() rowSelected = new EventEmitter<any>(); // Could be useful if parent needs individual row click events
+  @Output() viewArrayItems = new EventEmitter<{ itemData: any, column: ColumnDefinition, fullRowData: any }>();
+  @Output() viewObjectDetails = new EventEmitter<{ itemData: any, column: ColumnDefinition, fullRowData: any }>();
+  // Note: fullRowData is added to emitter to give context to the modal host if needed. itemData is specifically item[col.path]
 
   displayColumns: ColumnDefinition[] = [];
   private internalSchema: JsonSchema | null = null;
@@ -33,53 +35,94 @@ export class SmartTableComponent implements OnInit, OnChanges {
   ) {}
 
   ngOnInit(): void {
-    this.processInputs();
+    // ngOnChanges will handle initial input processing.
+    // ngOnInit can be used for one-time initializations not dependent on @Inputs, if any.
+    // console.log('SmartTableComponent: ngOnInit');
+    if (!this.internalSchema && (this.schema || this.collectionName)) {
+       // This case handles if ngOnChanges didn't fire for initial inputs for some reason,
+       // or if inputs become available after initial empty/null state.
+       // However, ngOnChanges *should* fire for initial @Input values.
+       this.processInitialSchema();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    let schemaChanged = false;
-    if (changes['schema']) {
-      this.internalSchema = this.schema;
-      schemaChanged = true;
-    }
-    if (changes['collectionName'] && !this.schema) {
-      // If schema is not directly provided, and collectionName changes, reload schema
-      this.loadSchemaByName(); // This calls generateDisplayColumns internally
-      schemaChanged = false; // Already handled
-    }
-    if (changes['data'] && !schemaChanged) { // Only re-gen columns if data changes AND schema didn't just change (which already re-gens)
-      // This condition might be too complex; often, just re-generating columns on data change is fine
-      // if generateDisplayColumns is cheap, or if data structure might imply column changes (not typical).
-      // For now, assume columns depend mostly on schema, not data content itself.
-    }
-    // If selectedRows input changes, the template will automatically reflect it due to [checked] binding.
+    // console.log('SmartTableComponent: ngOnChanges detected changes', changes);
+    let needsColumnGeneration = false;
+    let schemaPotentiallyChanged = false;
 
-    if (schemaChanged) {
+    // Priority 1: Direct schema input change
+    if (changes['schema']) {
+      // console.log('SmartTableComponent: Schema input changed');
+      this.internalSchema = this.schema;
+      needsColumnGeneration = true;
+      schemaPotentiallyChanged = true;
+    }
+
+    // Priority 2: collectionName change (only if schema is not directly provided or was removed)
+    // If schema is provided directly, collectionName is secondary or for context only.
+    if (changes['collectionName'] && (!this.schema || !changes['schema'])) {
+      // console.log('SmartTableComponent: collectionName input changed and no direct schema override');
+      // If collectionName changes, we must reload the schema based on the new name.
+      this.loadSchemaByName(); // This method sets internalSchema and calls generateDisplayColumns.
+      needsColumnGeneration = false; // loadSchemaByName handles its own column generation.
+      schemaPotentiallyChanged = true; // Schema will be loaded (or attempted)
+    }
+    
+    // If schema was set directly in this cycle, and it's different, generate columns.
+    if (needsColumnGeneration) {
+      // console.log('SmartTableComponent: Needs column generation due to direct schema change or initial load.');
       this.generateDisplayColumns();
+    }
+    
+    // Handle data changes
+    if (changes['data']) {
+      // console.log('SmartTableComponent: Data input changed');
+      // Data has changed. The template will re-render automatically as it iterates over 'data'.
+      // If the schema also changed in the same cycle, columns are already being regenerated.
+      // If only data changed, selected rows should be reset by the parent component typically.
+      // If this component were to manage its selection independently from input:
+      // if (!schemaPotentiallyChanged) { // Only reset selection if schema didn't change (avoid double reset)
+      //    this.selectedRowsChanged.emit(new Set()); // If component itself managed selection
+      // }
+    }
+
+    // If schema potentially changed (either by direct input or collectionName change),
+    // it's a good idea to notify that selection might be invalid.
+    // The parent (CollectionPage) already clears selection in applyAllFilters when data/schema changes.
+    if (schemaPotentiallyChanged && changes['selectedRows'] === undefined) { // Avoid if parent is already resetting selection
+        // console.log('SmartTableComponent: Schema changed, emitting empty set for selectedRowsChanged');
+        // This signals to parent that current selection might be invalid due to schema change.
+        // However, this can create a loop if parent then updates selectedRows input.
+        // Best if parent manages selection reset when it changes the data/schema.
+        // For now, CollectionPageComponent clears selection in applyAllFilters, which is good.
     }
   }
 
-  private processInputs(): void {
+  private processInitialSchema(): void {
+    // console.log('SmartTableComponent: processInitialSchema called');
     if (this.schema) {
       this.internalSchema = this.schema;
       this.generateDisplayColumns();
     } else if (this.collectionName) {
       this.loadSchemaByName();
     } else {
-      this.displayColumns = [];
+      this.displayColumns = []; // No schema context
     }
   }
 
   private loadSchemaByName(): void {
+    // console.log('SmartTableComponent: loadSchemaByName for', this.collectionName);
     if (this.collectionName) {
       this.internalSchema = this.schemaService.getSchema(this.collectionName) || null;
     } else {
       this.internalSchema = null;
     }
-    this.generateDisplayColumns();
+    this.generateDisplayColumns(); // Regenerate columns after schema is loaded/updated
   }
 
   private generateDisplayColumns(): void {
+    // console.log('SmartTableComponent: generateDisplayColumns based on', this.internalSchema);
     if (!this.internalSchema || this.internalSchema.type !== 'object' || !this.internalSchema.properties) {
       this.displayColumns = [];
       return;
@@ -146,33 +189,47 @@ export class SmartTableComponent implements OnInit, OnChanges {
   }
 
 
-  // --- Display Logic ---
-  getDisplayValue(item: any, column: ColumnDefinition): string {
-    if (item === null || item === undefined) return '';
-    
-    const value = item[column.path];
+  // --- Modal Trigger Emitters ---
+  onViewArrayItems(event: Event, itemData: any, column: ColumnDefinition, fullRowData: any): void {
+    event.stopPropagation(); // Prevent row selection toggle if button is inside cell
+    this.viewArrayItems.emit({ itemData, column, fullRowData });
+  }
 
-    if (value === null || value === undefined) return '';
-    if (column.isEncrypted) return '[Encrypted]';
+  onViewObjectDetails(event: Event, itemData: any, column: ColumnDefinition, fullRowData: any): void {
+    event.stopPropagation(); // Prevent row selection toggle
+    this.viewObjectDetails.emit({ itemData, column, fullRowData });
+  }
+
+  // --- Display Logic ---
+  // This method is now simplified, primarily for basic string conversion or complex object/array length.
+  // Specific formatting (dates, booleans) is handled more directly in the template.
+  getDisplayValue(item: any, column: ColumnDefinition): string {
+    if (item === null || item === undefined) return ''; // Should not happen if item is the row data
+    
+    const value = item[column.path]; // Access the specific field's value from the row item
+
+    if (value === null || value === undefined) return '-'; // Display dash for null/undefined values
+    // Encrypted check will be done in template before calling this for value.
 
     switch (column.type) {
       case 'object':
-        return '[Object]';
+        return '[Object]'; // Placeholder, button will be used
       case 'array':
-        return `[Array (${(value as any[]).length})]`;
-      case 'boolean':
-        // The template now handles boolean with icons directly. This can be a fallback.
-        return value ? 'Yes' : 'No'; 
+        // For simple arrays of primitives, could join them. For now, just count.
+        if (Array.isArray(value)) {
+          return `[${value.length} item(s)]`;
+        }
+        return '[Array]';
       case 'string':
-        if (column.format === 'date-time') {
+        if (column.format === 'date-time' || column.format === 'date') {
+          // DatePipe will be used in template, this is a fallback or for non-pipe scenarios
           try {
-            return this.datePipe.transform(value, 'medium') || String(value);
-          } catch (e) {
-            return String(value);
-          }
+            return this.datePipe.transform(value, 'mediumDate') || String(value);
+          } catch (e) { return String(value); }
         }
         return String(value);
       case 'number':
+      case 'boolean': // Boolean is handled by ion-toggle in template, this is fallback
         return String(value);
       default:
         return String(value);
